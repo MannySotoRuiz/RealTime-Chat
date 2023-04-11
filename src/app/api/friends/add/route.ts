@@ -50,7 +50,7 @@ export async function POST(req: Request) {
         }
 
         // if we have all the checks done, valid request, send friend request
-        db.sadd(`user:${idToAdd}:incoming_friend_request`, session.user.id); // the user that is logged in
+        db.sadd(`user:${idToAdd}:incoming_friend_requests`, session.user.id); // the user that is logged in
         // this is going to be put into list of the incoming friend requests of the user they are trying to add
 
         return new Response('OK');
