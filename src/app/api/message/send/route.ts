@@ -52,7 +52,7 @@ export async function POST(req: Request) {
             score: timestamp,
             member: JSON.stringify(message)
         });
-        // sorted by timestamp
+        // set is sorted by timestamp
 
         return new Response('OK');
 
