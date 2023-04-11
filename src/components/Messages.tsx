@@ -1,14 +1,16 @@
 "use client";
 
-import { cn } from '@/lib/utils';
+import { pusherClient } from '@/lib/pusher';
+import { cn, toPusherKey } from '@/lib/utils';
 import { Message } from '@/lib/validations/message';
 import { format } from 'date-fns';
 import Image from 'next/image';
-import { FC, useRef, useState } from 'react';
+import { FC, useEffect, useRef, useState } from 'react';
 
 interface MessagesProps {
     initialMessages: Message[]
     sessionId: string
+    chatId: string
     sessionImg: string | null | undefined
     chatPartner: User
 }
@@ -16,6 +18,7 @@ interface MessagesProps {
 const Messages: FC<MessagesProps> = ({
     initialMessages,
     sessionId,
+    chatId,
     sessionImg,
     chatPartner
 }) => {
@@ -23,6 +26,24 @@ const Messages: FC<MessagesProps> = ({
     // when a user sends a message, we can put into the state, showing it directly to the user instead of having to refresh the page
     const [messages, setMessages] = useState<Message[]>(initialMessages);
     const scrollDownRef = useRef<HTMLDivElement | null>(null);
+
+    useEffect(() => {
+        // doesnt allow back ticks so need to use function for that
+        pusherClient.subscribe(toPusherKey(`chat:${chatId}`)); // now listening 
+
+        // the message will get passed from the server
+        const messageHandler = (message: Message) => {
+            setMessages((prev) => [message, ...prev]); // get access to what they were previously
+        }
+
+        // now tell pusher what to do when something occurs
+        pusherClient.bind('incoming_messaging', messageHandler);
+
+        return () => {
+            pusherClient.unsubscribe(toPusherKey(`chat:${chatId}`));
+            pusherClient.unbind('incoming_messaging', messageHandler);
+        }
+    }, []);
 
     const formatTimestamp = (timestamp: number) => {
         return format(timestamp, 'HH:mm');
