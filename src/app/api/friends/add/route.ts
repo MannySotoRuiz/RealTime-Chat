@@ -1,6 +1,8 @@
 import { fetchRedis } from "@/helpers/redis";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { pusherServer } from "@/lib/pusher";
+import { toPusherKey } from "@/lib/utils";
 import { addFriendValidator } from "@/lib/validations/add-friend";
 import { getServerSession } from "next-auth";
 import { z } from "zod";
@@ -48,6 +50,16 @@ export async function POST(req: Request) {
         if (isAlreadyFriends) {
             return new Response('Already friends with this user', { status: 400 });
         }
+
+        // notify clients they have been added
+        pusherServer.trigger(
+            toPusherKey(`user:${idToAdd}:incoming_friend_requests`), // channel we are triggering to.
+            'incoming_friend_requests', // function name we are triggering 
+            { // the data we send along with this request
+                senderId: session.user.id,
+                senderEmail: session.user.email,
+            }
+        )
 
         // if we have all the checks done, valid request, send friend request
         db.sadd(`user:${idToAdd}:incoming_friend_requests`, session.user.id); // the user that is logged in
