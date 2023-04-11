@@ -1,12 +1,20 @@
 "use client";
 
-import { chatHrefConstructor } from '@/lib/utils';
+import { pusherClient } from '@/lib/pusher';
+import { chatHrefConstructor, toPusherKey } from '@/lib/utils';
 import { usePathname, useRouter } from 'next/navigation';
-import { FC, useEffect, useState } from 'react'
+import { FC, useEffect, useState } from 'react';
+import { toast } from 'react-hot-toast';
+import UnseenChatToast from './UnseenChatToast';
 
 interface SidebarChatListProps {
     friends: User[]
     sessionId: string
+}
+
+interface ExtendedMessage extends Message {
+    senderImg: string
+    senderName: string
 }
 
 const SidebarChatList: FC<SidebarChatListProps> = ({friends, sessionId}) => {
@@ -19,6 +27,46 @@ const SidebarChatList: FC<SidebarChatListProps> = ({friends, sessionId}) => {
     // when u were offline
     // In this case, since we are just keeping them in state, these are only going to show the messages u receive while you are online
     const [unseenMessages, setUnseenMessages] = useState<Message[]>([]);
+
+    useEffect(() => {
+        pusherClient.subscribe(toPusherKey(`user:${sessionId}:chats`)); // listening to their chats
+        pusherClient.subscribe(toPusherKey(`user:${sessionId}:friends`)); // listening to their friends request
+
+        const newFriendHandler = () => {
+            router.refresh(); // refresh the page, without hard reloading
+        }
+
+        const chatHandler = (message: ExtendedMessage) => {
+            const shouldNotify = 
+                pathname !== 
+                `/dashboard/chat/${chatHrefConstructor(sessionId, message.senderId)}`
+            console.log(shouldNotify, sessionId, message.senderId, pathname);
+
+            if (!shouldNotify) return
+
+            // should be notified
+            toast.custom((t) => (
+                <UnseenChatToast 
+                    t={t}
+                    sessionId={sessionId}
+                    senderId={message.senderId}
+                    senderImg={message.senderImg}
+                    senderMessage={message.text}
+                    senderName={message.senderName}
+                />
+            ));
+
+            setUnseenMessages((prev) => [...prev, message]); // pushing it into the prev unseen msgs
+        }
+
+        pusherClient.bind('new_message', chatHandler);
+        pusherClient.bind('new_friend', newFriendHandler);
+
+        return () => {
+            pusherClient.unsubscribe(toPusherKey(`user:${sessionId}:chats`)); // stop listening
+            pusherClient.unsubscribe(toPusherKey(`user:${sessionId}:friends`)); 
+        }
+    }, [pathname, sessionId, router]);
 
     useEffect(() => {
         if(pathname?.includes('chat')) {
@@ -59,4 +107,4 @@ const SidebarChatList: FC<SidebarChatListProps> = ({friends, sessionId}) => {
     );
 }
 
-export default SidebarChatList
+export default SidebarChatList;
