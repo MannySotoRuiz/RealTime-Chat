@@ -24,16 +24,26 @@ const FriendRequestsSidebarOptions: FC<FriendRequestsSidebarOptionsProps> = ({
         // doesnt allow back ticks so need to use function for that
         pusherClient.subscribe(toPusherKey(`user:${sessionId}:incoming_friend_requests`)); // now listening 
 
+        pusherClient.subscribe(toPusherKey(`user:${sessionId}:friends`));
+
         const friendRequestHandler = () => {
             setUnseenRequestCount((prev) => prev + 1);
         }
 
+        // whenever u add me as a friend, icon friend requests icon for unseen friend request will go away in real time
+        const addedFriendHandler = () => {
+            setUnseenRequestCount((prev) => prev - 1);
+        }
+
         // now tell pusher what to do when something occurs
         pusherClient.bind('incoming_friend_requests', friendRequestHandler);
+        pusherClient.bind('new_friend', friendRequestHandler);
 
         return () => {
             pusherClient.unsubscribe(toPusherKey(`user:${sessionId}:incoming_friend_requests`));
-            pusherClient.unbind('incoming_friend_requests', friendRequestHandler);
+            pusherClient.unsubscribe(toPusherKey(`user:${sessionId}:friends`));
+            pusherClient.unbind('incoming_friend_requests', addedFriendHandler);
+            pusherClient.unbind('new_friend', friendRequestHandler);
         }
     }, [sessionId]);
 
