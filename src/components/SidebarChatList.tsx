@@ -28,12 +28,15 @@ const SidebarChatList: FC<SidebarChatListProps> = ({friends, sessionId}) => {
     // In this case, since we are just keeping them in state, these are only going to show the messages u receive while you are online
     const [unseenMessages, setUnseenMessages] = useState<Message[]>([]);
 
+    const [activeChats, setActiveChats] = useState<User[]>(friends); // so all chats we have are now in kept in state now
+
     useEffect(() => {
         pusherClient.subscribe(toPusherKey(`user:${sessionId}:chats`)); // listening to their chats
         pusherClient.subscribe(toPusherKey(`user:${sessionId}:friends`)); // listening to their friends request
 
-        const newFriendHandler = () => {
-            router.refresh(); // refresh the page, without hard reloading
+        // this newFriend is given by the server in api/accept route.js line 52 or 53
+        const newFriendHandler = (newFriend: User) => {
+            setActiveChats((prev) => [...prev, newFriend]);
         }
 
         const chatHandler = (message: ExtendedMessage) => {
@@ -81,7 +84,7 @@ const SidebarChatList: FC<SidebarChatListProps> = ({friends, sessionId}) => {
 
     return (
         <ul role='list' className='max-h-[25rem] overflow-y-auto -mx-2 space-y-1'>
-            {friends.sort().map((friend) => {
+            {activeChats.sort().map((friend) => {
                 const unseenMessagesCount = unseenMessages.filter((unseenMsg) => {
                     return unseenMsg.senderId === friend.id;
                 }).length; // access how many unseen friend msgs we have for that friend
