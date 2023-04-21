@@ -3,7 +3,7 @@
 import { pusherClient } from '@/lib/pusher';
 import { cn, toPusherKey } from '@/lib/utils';
 import { Message } from '@/lib/validations/message';
-import { format } from 'date-fns';
+// import { format } from 'date-fns';
 import Image from 'next/image';
 import { FC, useEffect, useRef, useState } from 'react';
 
@@ -45,9 +45,9 @@ const Messages: FC<MessagesProps> = ({
         }
     }, [chatId]);
 
-    const formatTimestamp = (timestamp: number) => {
-        return format(timestamp, 'HH:mm');
-    }
+    // const formatTimestamp = (timestamp: number) => {
+    //     return format(timestamp, 'HH:mm');
+    // }
 
     return (
         <div id='messages' className='flex h-full flex-1 flex-col-reverse gap-4 p-3 overflow-y-auto scrollbar-thumb-blue scrollbar-thumb-rounded scrollbar-track-blue-lighter scrollbar-w-2 scrolling-touch'>
@@ -79,7 +79,8 @@ const Messages: FC<MessagesProps> = ({
                                 })}>
                                     {message.text}{' '}
                                     <span className='ml-2 text-xs text-gray-400'>
-                                        {formatTimestamp(message.timestamp)}
+                                        {/* {formatTimestamp(message.timestamp)} */}
+                                        {message.timestamp}
                                     </span>
                                 </span>
                             </div>
